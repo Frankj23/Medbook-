@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { usePatient } from '../../context/PatientContext'
 import { query, getAll, getById, formatTime } from '../../services/db'
@@ -8,9 +8,11 @@ export default function DashboardIdle() {
   const { user, logout } = useAuth()
   const { setPatientFromId } = usePatient()
   const navigate = useNavigate()
+  const location = useLocation()
   const [search, setSearch] = useState('')
   const [consultations, setConsultations] = useState([])
   const [pendingResults, setPendingResults] = useState([])
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const load = () => {
     const allCons = query('consultations', () => true).map(c => ({ ...c, patient: getById('patients', c.patientId) }))
@@ -40,6 +42,17 @@ export default function DashboardIdle() {
     completed:          { label: 'Completed',           bg: '#e8f7ef', color: '#1a7a4a', dot: '#1a7a4a' },
   }
 
+  const doctorLinks = [
+    { label: 'Dashboard',                path: '/doctor/dashboard' },
+    { label: 'Active Consultation',      path: '/doctor/consultation' },
+    { label: 'Review & Confirm',         path: '/doctor/consultation/notes' },
+    { label: 'Lab Request Sent',         path: '/doctor/consultation/confirmed' },
+    { label: 'Results Inbox',            path: '/doctor/results-inbox' },
+    { label: 'Prescription Entry',       path: '/doctor/prescription/entry' },
+    { label: 'Prescription Confirmed',   path: '/doctor/prescription/confirm' },
+    { label: 'Prescription History',     path: '/doctor/prescription/history' },
+  ]
+
   const filtered = consultations.filter(c =>
     !search ||
     c.patient?.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -49,7 +62,66 @@ export default function DashboardIdle() {
   return (
     <div style={{ minHeight: '100vh', background: '#f6fafa', fontFamily: 'Inter, sans-serif' }}>
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', height: '60px', background: '#fff', borderBottom: '1px solid #e8f2f2', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}>
+          <button
+            onClick={() => setSidebarOpen(open => !open)}
+            style={{
+              width: '40px',
+              height: '40px',
+              border: '1px solid #e8f2f2',
+              background: '#fff',
+              borderRadius: '12px',
+              display: 'grid',
+              placeItems: 'center',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+            aria-label="Toggle doctor menu"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#005454" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 6h16" />
+              <path d="M4 12h16" />
+              <path d="M4 18h16" />
+            </svg>
+          </button>
+          {sidebarOpen && (
+            <div style={{
+              position: 'absolute',
+              top: '52px',
+              left: 0,
+              width: '260px',
+              background: '#fff',
+              borderRadius: '16px',
+              boxShadow: '0 18px 40px rgba(0,84,84,0.12)',
+              border: '1px solid #e8f2f2',
+              padding: '16px',
+              zIndex: 20,
+            }}>
+              <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#1a2b2b', margin: '0 0 14px' }}>Doctor Menu</h3>
+              <div style={{ display: 'grid', gap: '10px' }}>
+                {doctorLinks.map(item => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                      display: 'block',
+                      padding: '11px 14px',
+                      borderRadius: '12px',
+                      background: item.path === location.pathname ? '#e6f4f4' : '#f8fbfb',
+                      border: '1px solid #e8f2f2',
+                      color: '#1a2b2b',
+                      fontWeight: item.path === location.pathname ? 700 : 600,
+                      textDecoration: 'none',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{ width: '28px', height: '28px', background: 'linear-gradient(135deg,#005454,#0b6e6e)', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ color: '#fff', fontSize: '13px', fontWeight: '800' }}>L</span>
           </div>
@@ -96,8 +168,6 @@ export default function DashboardIdle() {
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '20px', alignItems: 'start' }}>
-
-          {/* Consultation list */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
               <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1a2b2b', margin: 0 }}>Today's Patients</h2>
