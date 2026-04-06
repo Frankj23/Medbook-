@@ -135,7 +135,6 @@ export default function DoctorResultsInbox() {
           </div>
         )}
       </div>
-      <Link to="/" className="back-to-index">← All screens</Link>
     </div>
   )
 }
