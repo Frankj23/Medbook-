@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getAll, getById, insert, generateId } from '../../services/db'
 
@@ -12,6 +12,7 @@ const CATEGORIES = [
 export default function NurseTriage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [search, setSearch] = useState('')
   const [patient, setPatient] = useState(null)
   const [notFound, setNotFound] = useState(false)
@@ -26,6 +27,18 @@ export default function NurseTriage() {
     if (found) { setPatient(found); setNotFound(false) }
     else        { setPatient(null); setNotFound(true)  }
   }
+
+  useEffect(() => {
+    const patientId = location.state?.patientId
+    if (patientId) {
+      const found = getById('patients', patientId)
+      if (found) {
+        setPatient(found)
+        setSearch(found.id)
+        setNotFound(false)
+      }
+    }
+  }, [location.state])
 
   const setV = k => e => setVitals(p => ({ ...p, [k]: e.target.value }))
 
@@ -78,6 +91,9 @@ export default function NurseTriage() {
     <div style={{ minHeight: '100vh', background: '#f6fafa', fontFamily: 'Inter, sans-serif' }}>
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', height: '60px', background: '#fff', borderBottom: '1px solid #e8f2f2', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '10px', border: '1px solid #e8f2f2', background: '#fff', cursor: 'pointer', padding: 0 }} aria-label="Go back">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#005454" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
           <div style={{ width: '28px', height: '28px', background: 'linear-gradient(135deg,#005454,#0b6e6e)', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ color: '#fff', fontSize: '13px', fontWeight: '800' }}>L</span>
           </div>
@@ -106,6 +122,9 @@ export default function NurseTriage() {
               <input className="lf-input" placeholder="Patient ID or name…" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} style={{ paddingLeft: '40px' }} />
             </div>
             <button className="btn-primary" onClick={handleSearch}>Search</button>
+          </div>
+          <div style={{ marginTop: '10px' }}>
+            <Link to="/register" style={{ fontSize: '13px', color: '#005454', fontWeight: '700', textDecoration: 'none' }}>New patient? Register here</Link>
           </div>
           {notFound && <p style={{ fontSize: '13px', color: '#c62828', margin: '10px 0 0' }}>No patient found. Please register the patient first.</p>}
         </div>

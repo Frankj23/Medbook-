@@ -27,6 +27,7 @@ export function AuthProvider({ children }) {
     try {
       const response = await apiLoginUser(id, password)
       const userData = response.user
+      const token = response.token
       const roleData = ROLES[userData.role]
       
       if (!roleData) {
@@ -34,8 +35,9 @@ export function AuthProvider({ children }) {
         throw new Error('Invalid user role')
       }
       
-      const u = { ...roleData, ...userData, roleKey: userData.role }
+      const u = { ...roleData, ...userData, roleKey: userData.role, token }
       localStorage.setItem('labflow_user', JSON.stringify(u))
+      localStorage.setItem('labflow_token', token)
       setUser(u)
       toast.success(`Login successful! Welcome ${u.name}`)
       return u
@@ -58,6 +60,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('labflow_user')
+    localStorage.removeItem('labflow_token')
     setUser(null)
     toast.success('Logged out successfully')
   }

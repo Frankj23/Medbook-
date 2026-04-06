@@ -4,12 +4,19 @@ function buildUrl(path) {
   return `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`
 }
 
+function getAuthToken() {
+  if (!isBrowser()) return null
+  return localStorage.getItem('labflow_token')
+}
+
 async function request(path, options = {}) {
   const url = buildUrl(path)
+  const token = getAuthToken()
   const response = await fetch(url, {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
     ...options,

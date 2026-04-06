@@ -37,13 +37,13 @@ export default function PatientRegistration() {
       address: form.address,
       allergies: form.allergies || 'None known',
       emergencyContact: form.emergencyContact,
-      nhis: form.nhis || generateId('NHIS'),
+      emergencyName: form.emergencyName,
     }
 
     const saved = insert('patients', payload)
     setPatient(saved)
     setSavedId(saved.id)
-    navigate('/register/success', { state: { id: saved.id, name: saved.name } })
+    navigate('/nurse/triage', { state: { patientId: saved.id } })
   }
 
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
@@ -52,6 +52,9 @@ export default function PatientRegistration() {
     <div style={{ minHeight: '100vh', background: '#f6fafa', fontFamily: 'Inter, sans-serif' }}>
       <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: '56px', background: 'linear-gradient(135deg,#005454,#0b6e6e)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff', cursor: 'pointer', padding: 0 }} aria-label="Go back">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
           <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           <span style={{ color: '#fff', fontSize: '17px', fontWeight: '700' }}>LabFlow</span>
         </div>
@@ -106,16 +109,16 @@ export default function PatientRegistration() {
               </select>
             </div>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '7px' }}>NHIS Number</label>
-              <input className="lf-input" value={form.nhis} onChange={set('nhis')} placeholder="Auto-generated if blank" />
+              <label style={{ fontSize: '13px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '7px' }}>Known Allergies</label>
+              <input className="lf-input" value={form.nhis} onChange={set('nhis')} placeholder="e.g. Penicillin, None" />
             </div>
             <div>
-              <label style={{ fontSize: '13px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '7px' }}>Known Allergies</label>
-              <input className="lf-input" value={form.allergies} onChange={set('allergies')} placeholder="e.g. Penicillin, None" />
+              <label style={{ fontSize: '13px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '7px' }}>Emergency Name</label>
+              <input className="lf-input" value={form.allergies} onChange={set('allergies')} placeholder="Name" />
             </div>
             <div>
               <label style={{ fontSize: '13px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '7px' }}>Emergency Contact</label>
-              <input className="lf-input" value={form.emergencyContact} onChange={set('emergencyContact')} placeholder="Name — phone" />
+              <input className="lf-input" value={form.emergencyContact} onChange={set('emergencyContact')} placeholder="Phone Number" />
             </div>
           </div>
 
@@ -133,7 +136,7 @@ export default function PatientRegistration() {
           </button>
         </div>
       </div>
-      <Link to="/" className="back-to-index">← All screens</Link>
+      {/* <Link to="/" className="back-to-index">← All screens</Link> */}
     </div>
   )
 }

@@ -52,7 +52,7 @@ export async function login(req, res) {
       name: user.name,
       email: user.email || ''
     }, 
-    token: `${user.id}.token` 
+    Totoken: `${user.id}.token` 
   })
 }
 
