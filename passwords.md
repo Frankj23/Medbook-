@@ -1,6 +1,6 @@
 #Admin
 ID: AD-0001
-Password: Admin123
+Password: Admin123!
 
 #Doctor
 
