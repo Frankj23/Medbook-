@@ -157,7 +157,8 @@ export default function NurseTriage() {
                   { key: 'temp',   label: 'Temperature',    unit: '°C',   placeholder: '36.5'   },
                   { key: 'pulse',  label: 'Pulse Rate',     unit: 'bpm',  placeholder: '72'     },
                   { key: 'weight', label: 'Weight',         unit: 'kg',   placeholder: '70'     },
-                  { key: 'spo2',   label: 'SpO₂',           unit: '%',    placeholder: '98'     },
+                  { key: 'spo2',   label: 'SpO₂',           unit: '%',    placeholder: '98' },
+                  {key: 'bmi',     label: 'BMI',            unit: 'kg/m2',     placeholder: '22.5'},
                 ].map(f => (
                   <div key={f.key}>
                     <label style={{ fontSize: '12px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '6px' }}>{f.label}</label>
