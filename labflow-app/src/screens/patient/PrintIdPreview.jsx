@@ -1,167 +1,434 @@
-import { useNavigate, Link } from 'react-router-dom'
-import { usePatient } from '../../context/PatientContext'
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { usePatient } from "../../context/PatientContext";
+import QRCode from "qrcode";
+import jsPDF from "jspdf";
 
-const BAR = Array.from({ length: 42 }, (_, i) =>
-  [3, 2, 1, 3, 2, 1, 2, 3, 1, 2][i % 10]
-)
-
-function generateQrPattern(id) {
-  return Array.from({ length: 6 }, (_, row) =>
-    Array.from({ length: 6 }, (_, col) => ((row + col + id.length) % 2) === 0)
-  )
-}
+// Badge size in mm (CR80 Access Badge standard)
+const BADGE_W_MM = 98.5;
+const BADGE_H_MM = 67;
 
 export default function PrintIdPreview() {
-  const navigate = useNavigate()
-  const { patient } = usePatient()
-  const qrPattern = generateQrPattern(patient?.id || 'PT0000')
+  const navigate = useNavigate();
+  const { patient } = usePatient();
+  const canvasRef = useRef(null);
+  const [qrDataUrl, setQrDataUrl] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
-  const handlePrint = () => {
-    window.print()
-  }
+  const patientName = patient?.name || "Unknown Patient";
+  const patientNameUpper = patientName.toUpperCase();
+  const patientId = patient?.id || "PT-0000";
 
-  const downloadCard = () => {
-    const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg width="330" height="520" viewBox="0 0 330 520" xmlns="http://www.w3.org/2000/svg">\n  <rect width="330" height="520" rx="24" fill="#ffffff" stroke="#005454" stroke-width="4"/>\n  <rect x="20" y="20" width="290" height="100" rx="18" fill="#005454"/>\n  <text x="35" y="55" font-family="Inter, sans-serif" font-size="18" fill="#fff">LabFlow ID Card</text>\n  <text x="35" y="82" font-family="Inter, sans-serif" font-size="12" fill="#d7f0f0">Port City General Hospital</text>\n  <text x="35" y="140" font-family="Inter, sans-serif" font-size="12" fill="#005454">PATIENT NAME</text>\n  <text x="35" y="165" font-family="Inter, sans-serif" font-size="22" font-weight="700" fill="#1a2b2b">${patient?.name || 'Unknown Patient'}</text>\n  <text x="35" y="198" font-family="Inter, sans-serif" font-size="12" fill="#005454">PATIENT ID</text>\n  <text x="35" y="222" font-family="Inter, sans-serif" font-size="18" font-weight="700" fill="#1a2b2b">${patient?.id || 'PT-0000'}</text>\n  <g transform="translate(35,250)">\n    ${qrPattern.map((row, r) => row.map((filled, c) => `<rect x="${c*18}" y="${r*18}" width="16" height="16" fill="${filled ? '#005454' : '#f6f6f6'}"/>`).join('')).join('')}\n  </g>\n  <text x="35" y="460" font-family="Inter, sans-serif" font-size="11" fill="#5a7272">Generated on ${new Date().toLocaleDateString()}</text>\n</svg>`
+  // Generate QR code data URL tied to the patient's unique ID
+  useEffect(() => {
+    if (!patientId) return;
+    QRCode.toDataURL(`LABFLOW:${patientId}:${patientNameUpper}`, {
+      width: 200,
+      margin: 1,
+      color: { dark: "#005454", light: "#ffffff" },
+      errorCorrectionLevel: "H",
+    })
+      .then((url) => setQrDataUrl(url))
+      .catch((err) => console.error("QR generation failed", err));
+  }, [patientId, patientName]);
 
-    const blob = new Blob([svg], { type: 'image/svg+xml' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `${patient?.id || 'patient-id'}-card.svg`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+  // Draw the badge onto an offscreen canvas so we can snapshot it for PDF
+  useEffect(() => {
+    if (!qrDataUrl || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    // Work at 300 dpi equivalent for a 98.5×67mm badge
+    const DPI = 300;
+    const MM_TO_INCH = 1 / 25.4;
+    const W = Math.round(BADGE_W_MM * MM_TO_INCH * DPI);
+    const H = Math.round(BADGE_H_MM * MM_TO_INCH * DPI);
+    canvas.width = W;
+    canvas.height = H;
+
+    // Full badge background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+
+    // Top stripe
+    ctx.fillStyle = "#005454";
+    ctx.fillRect(0, 0, W, H * 0.16);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `700 ${Math.round(H * 0.065)}px Inter, sans-serif`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    let stripeName = patientNameUpper;
+    const stripeMaxWidth = W * 0.9;
+    while (
+      ctx.measureText(stripeName).width > stripeMaxWidth &&
+      stripeName.length > 4
+    ) {
+      stripeName = stripeName.slice(0, -1);
+    }
+    ctx.fillText(stripeName, W * 0.05, H * 0.08);
+
+    ctx.font = `500 ${Math.round(H * 0.04)}px Inter, sans-serif`;
+    ctx.fillText("Patient ID Badge", W * 0.05, H * 0.125);
+
+    // Main content columns
+    const leftX = W * 0.05;
+    const leftW = W * 0.55;
+    const rightX = W * 0.63;
+    const rightW = W * 0.32;
+
+    // LabFlow circular badge
+    const circleX = leftX + Math.round(H * 0.08);
+    const circleY = H * 0.27;
+    const circleR = H * 0.09;
+    ctx.fillStyle = "#005454";
+    ctx.beginPath();
+    ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `800 ${Math.round(H * 0.085)}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("L", circleX, circleY);
+
+    ctx.fillStyle = "#1a2b2b";
+    ctx.font = `700 ${Math.round(H * 0.05)}px Inter, sans-serif`;
+    ctx.textAlign = "left";
+    ctx.fillText("LabFlow", leftX + circleR * 2 + H * 0.03, H * 0.23);
+    ctx.fillStyle = "#8fa8a8";
+    ctx.font = `500 ${Math.round(H * 0.035)}px Inter, sans-serif`;
+    ctx.fillText("Patient", leftX + circleR * 2 + H * 0.03, H * 0.28);
+
+    // Patient ID label
+    ctx.fillStyle = "#8fa8a8";
+    ctx.font = `600 ${Math.round(H * 0.036)}px Inter, sans-serif`;
+    ctx.fillText("Patient ID", leftX, H * 0.44);
+
+    // Patient ID label
+    ctx.fillStyle = "#8fa8a8";
+    ctx.font = `600 ${Math.round(H * 0.04)}px Inter, sans-serif`;
+    ctx.fillText("Patient ID", leftX, H * 0.45);
+
+    // Patient ID value
+    ctx.fillStyle = "#005454";
+    ctx.font = `700 ${Math.round(H * 0.085)}px Inter, sans-serif`;
+    ctx.fillText(patientId, leftX, H * 0.475);
+
+    // QR card area
+    const qrCardY = H * 0.22;
+    const qrCardH = H * 0.52;
+    ctx.fillStyle = "#f4f8f8";
+    ctx.fillRect(rightX, qrCardY, rightW, qrCardH);
+    ctx.strokeStyle = "#e0ecec";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(rightX, qrCardY, rightW, qrCardH);
+
+    // QR code title
+    ctx.fillStyle = "#5a7272";
+    ctx.font = `700 ${Math.round(H * 0.038)}px Inter, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText("Scan", rightX + rightW / 2, qrCardY + H * 0.035);
+
+    // QR code
+    if (qrDataUrl) {
+      const qrImg = new Image();
+      qrImg.onload = () => {
+        const qrSize = Math.min(rightW * 0.78, qrCardH * 0.68);
+        const qrX = rightX + (rightW - qrSize) / 2;
+        const qrY = qrCardY + (qrCardH - qrSize) / 2;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(qrX - 6, qrY - 6, qrSize + 12, qrSize + 12);
+        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+      };
+      qrImg.src = qrDataUrl;
+    }
+
+    // Footer text
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#8fa8a8";
+    ctx.font = `500 ${Math.round(H * 0.035)}px Inter, sans-serif`;
+    ctx.fillText("Port City General Hospital", leftX, H * 0.85);
+    ctx.fillText(`Issued: ${new Date().toLocaleDateString()}`, leftX, H * 0.9);
+  }, [qrDataUrl, patientName, patientId]);
+
+  const downloadPdf = async () => {
+    setDownloading(true);
+    try {
+      const canvas = canvasRef.current;
+      // Wait a tick for the QR image to render
+      await new Promise((r) => setTimeout(r, 400));
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+
+      // Try exact badge size first
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: [BADGE_W_MM, BADGE_H_MM],
+      });
+      doc.addImage(imgData, "JPEG", 0, 0, BADGE_W_MM, BADGE_H_MM);
+      doc.save(`${patientId}-badge.pdf`);
+
+      // Redirect to success after download
+      setTimeout(
+        () => navigate("/register/success", { state: { fromPrint: true } }),
+        500,
+      );
+    } catch (err) {
+      // Fallback: center on A4
+      try {
+        const canvas = canvasRef.current;
+        const imgData = canvas.toDataURL("image/jpeg", 1.0);
+        const doc = new jsPDF({
+          orientation: "landscape",
+          unit: "mm",
+          format: "a4",
+        });
+        const pageW = 297;
+        const pageH = 210;
+        const x = (pageW - BADGE_W_MM) / 2;
+        const y = (pageH - BADGE_H_MM) / 2;
+        doc.addImage(imgData, "JPEG", x, y, BADGE_W_MM, BADGE_H_MM);
+        doc.save(`${patientId}-badge.pdf`);
+        setTimeout(
+          () => navigate("/register/success", { state: { fromPrint: true } }),
+          500,
+        );
+      } catch (e2) {
+        console.error("PDF download failed", e2);
+      }
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
-    <div style={{
-      minHeight: '100vh', background: '#c8d8d8', fontFamily: 'Inter, sans-serif',
-      display: 'flex', flexDirection: 'column',
-    }}>
-      <style>{`
-        @media print {
-          body > *:not(#print-target) { display: none !important; }
-          #print-target { display: block !important; position: static !important; }
-          .back-to-index { display: none !important; }
-        }
-      `}</style>
-
-      <nav style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 24px', height: '56px',
-        background: 'linear-gradient(135deg,#005454,#0b6e6e)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#c8d8d8",
+        fontFamily: "Inter, sans-serif",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <nav
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 24px",
+          height: "56px",
+          background: "linear-gradient(135deg,#005454,#0b6e6e)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <svg
+            width="20"
+            height="20"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="white"
+            strokeWidth="2"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
           </svg>
-          <span style={{ color: '#fff', fontSize: '16px', fontWeight: '700' }}>LabFlow</span>
+          <span style={{ color: "#fff", fontSize: "16px", fontWeight: "700" }}>
+            LabFlow
+          </span>
         </div>
-        <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', fontWeight: '500' }}>Patient Registration</span>
+        <span
+          style={{
+            color: "rgba(255,255,255,0.85)",
+            fontSize: "13px",
+            fontWeight: "500",
+          }}
+        >
+        </span>
       </nav>
 
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-        <div id="print-target" className="lf-card" style={{ width: '100%', maxWidth: '520px', overflow: 'hidden' }}>
-
-          {/* Modal body */}
-          <div style={{ padding: '28px 28px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "24px",
+        }}
+      >
+        <div
+          className="lf-card"
+          style={{ width: "100%", maxWidth: "560px", overflow: "hidden" }}
+        >
+          <div style={{ padding: "28px 28px 24px" }}>
+            {/* Header */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                marginBottom: "20px",
+              }}
+            >
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#1a2b2b', margin: '0 0 4px' }}>
-                  Print ID Card Preview
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "700",
+                    color: "#1a2b2b",
+                    margin: "0 0 4px",
+                  }}
+                >
+                  Patient Badge Preview
                 </h3>
-                <p style={{ color: '#5a7272', fontSize: '13px', margin: 0 }}>Verify layout before sending to printer.</p>
+                <p style={{ color: "#5a7272", fontSize: "13px", margin: 0 }}>
+                  {patientName} —{" "}
+                  <strong style={{ color: "#005454" }}>{patientId}</strong>
+                </p>
               </div>
               <button
-                onClick={() => navigate('/register/success')}
+                onClick={() => navigate(-1)}
                 style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#5a7272', fontSize: '20px', lineHeight: 1, padding: '4px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  borderRadius: '6px',
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#5a7272",
+                  fontSize: "20px",
+                  lineHeight: 1,
+                  padding: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  borderRadius: "6px",
                 }}
-              >×</button>
+              >
+                ×
+              </button>
             </div>
 
-            {/* ID Card preview */}
-            <div style={{
-              border: '1.5px solid #e0ecec', borderRadius: '14px', overflow: 'hidden',
-              boxShadow: '0 4px 16px rgba(0,84,84,0.10)', maxWidth: '340px', margin: '0 auto 24px',
-            }}>
-              {/* Card header */}
-              <div style={{
-                background: 'linear-gradient(135deg,#005454,#0b6e6e)',
-                padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '10px',
-              }}>
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                  <path d="M2 17l10 5 10-5"/>
-                  <path d="M2 12l10 5 10-5"/>
-                </svg>
-                <span style={{ color: '#fff', fontSize: '15px', fontWeight: '700' }}>LabFlow</span>
-              </div>
+            {/* Badge live preview — scaled down from canvas */}
+            <div
+              style={{
+                border: "1.5px solid #e0ecec",
+                borderRadius: "12px",
+                overflow: "hidden",
+                boxShadow: "0 4px 20px rgba(0,84,84,0.12)",
+                marginBottom: "24px",
+                background: "#fff",
+              }}
+            >
+              {/* Scaled canvas preview */}
+              <canvas
+                ref={canvasRef}
+                style={{ width: "100%", display: "block" }}
+              />
+            </div>
 
-              {/* Card body */}
-              <div style={{ padding: '20px 18px', background: '#fff' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
-                  <div>
-                    <p style={{ fontSize: '10px', fontWeight: '700', color: '#8fa8a8', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 5px' }}>
-                      PATIENT NAME
-                    </p>
-                    <p style={{ fontSize: '18px', fontWeight: '700', color: '#1a2b2b', margin: 0 }}>{patient?.name || 'Unknown Patient'}</p>
-                  </div>
-                  {/* NFC icon */}
-                  <div style={{
-                    width: '32px', height: '32px', borderRadius: '50%',
-                    background: '#e8f2f2', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#005454" strokeWidth="2">
-                      <path d="M20 12a8 8 0 0 0-8-8M16 12a4 4 0 0 0-4-4M12 12a0 0 0 0 0 0 0"/>
-                      <circle cx="12" cy="12" r="1" fill="#005454"/>
-                    </svg>
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '16px' }}>
-                  <p style={{ fontSize: '10px', fontWeight: '700', color: '#8fa8a8', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 5px' }}>
-                    PATIENT ID
-                  </p>
-                  <p style={{ fontSize: '15px', fontWeight: '700', color: '#005454', letterSpacing: '0.04em', margin: '0 0 10px' }}>
-                    {patient?.id || 'PT-0000'}
-                  </p>
-                  {/* Barcode */}
-                  <div style={{ display: 'flex', gap: '1px', alignItems: 'flex-end', height: '36px' }}>
-                    {BAR.map((h, i) => (
-                      <div key={i} style={{
-                        width: `${h}px`, height: '100%', background: '#1a2b2b', borderRadius: '1px',
-                      }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
+            {/* Info chips */}
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                flexWrap: "wrap",
+                marginBottom: "24px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "11px",
+                  background: "#e6f4f4",
+                  color: "#005454",
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                  fontWeight: "600",
+                }}
+              >
+              </span>
+              <span
+                style={{
+                  fontSize: "11px",
+                  background: "#e6f4f4",
+                  color: "#005454",
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                  fontWeight: "600",
+                }}
+              >
+              </span>
+              <span
+                style={{
+                  fontSize: "11px",
+                  background: "#e6f4f4",
+                  color: "#005454",
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                  fontWeight: "600",
+                }}
+              >
+              </span>
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '12px' }}>
-              <button className="btn-ghost" onClick={() => navigate('/register/success')}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: "12px",
+              }}
+            >
+              <button className="btn-ghost" onClick={() => navigate(-1)}>
                 Cancel
               </button>
-              <button className="btn-primary" onClick={handlePrint}>
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <polyline points="6 9 6 2 18 2 18 9"/>
-                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                  <rect x="6" y="14" width="12" height="8"/>
-                </svg>
-                Print ID Card
+              <button
+                id="btn-download-badge-pdf"
+                className="btn-primary"
+                onClick={downloadPdf}
+                disabled={downloading || !qrDataUrl}
+                style={{ opacity: downloading || !qrDataUrl ? 0.7 : 1 }}
+              >
+                {downloading ? (
+                  <>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      style={{ animation: "spin 1s linear infinite" }}
+                    >
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    Downloading…
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      width="14"
+                      height="14"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Download Badge PDF
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <Link to="/" className="back-to-index">← All screens</Link>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
-  )
+  );
 }
-

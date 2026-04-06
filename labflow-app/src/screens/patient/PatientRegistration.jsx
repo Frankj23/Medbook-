@@ -6,7 +6,7 @@ import { usePatient } from '../../context/PatientContext'
 export default function PatientRegistration() {
   const navigate = useNavigate()
   const { setPatient } = usePatient()
-  const [form, setForm] = useState({ fullName: '', phone: '', dob: '', gender: 'Female', address: '', bloodGroup: 'O+', allergies: '', nhis: '', emergencyContact: '' })
+  const [form, setForm] = useState({ fullName: '', phone: '', dob: '', gender: 'Female', address: '', bloodGroup: 'O+', allergies: '', emergencyName: '', emergencyContact: '' })
   const [submitted, setSubmitted] = useState(false)
   const [savedId, setSavedId] = useState(null)
 
@@ -110,11 +110,11 @@ export default function PatientRegistration() {
             </div>
             <div>
               <label style={{ fontSize: '13px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '7px' }}>Known Allergies</label>
-              <input className="lf-input" value={form.nhis} onChange={set('nhis')} placeholder="e.g. Penicillin, None" />
+              <input className="lf-input" value={form.allergies} onChange={set('allergies')} placeholder="e.g. Penicillin, None" />
             </div>
             <div>
               <label style={{ fontSize: '13px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '7px' }}>Emergency Name</label>
-              <input className="lf-input" value={form.allergies} onChange={set('allergies')} placeholder="Name" />
+              <input className="lf-input" value={form.emergencyName} onChange={set('emergencyName')} placeholder="Name" />
             </div>
             <div>
               <label style={{ fontSize: '13px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '7px' }}>Emergency Contact</label>
