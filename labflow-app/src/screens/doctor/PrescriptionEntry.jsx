@@ -59,7 +59,7 @@ export default function PrescriptionEntry() {
         <p style={{ color:'#8fa8a8', marginBottom:'14px' }}>No patient with ready results. Check the lab queue.</p>
         <button className="btn-primary" style={{ justifyContent:'center' }} onClick={() => navigate('/doctor/dashboard')}>← Dashboard</button>
       </div>
-      <Link to="/" className="back-to-index">← All screens</Link>
+      {/* <Link to="/" className="back-to-index">← All screens</Link> */}
     </div>
   )
 
@@ -191,7 +191,7 @@ export default function PrescriptionEntry() {
           </button>
         </div>
       </div>
-      <Link to="/" className="back-to-index">← All screens</Link>
+      {/* <Link to="/" className="back-to-index">← All screens</Link> */}
     </div>
   )
 }

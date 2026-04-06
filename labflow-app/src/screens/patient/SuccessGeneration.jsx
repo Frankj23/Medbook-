@@ -29,7 +29,7 @@ export default function SuccessGeneration() {
           </p>
           {patient && (
             <div style={{ background:'#f0f7f7', borderRadius:'12px', padding:'14px 16px', marginBottom:'28px', textAlign:'left' }}>
-              {[['Gender', patient.gender],['DOB', patient.dob],['Blood Group', patient.bloodGroup],['NHIS', patient.nhisNumber || '—']].map(([k,v]) => (
+              {[['Gender', patient.gender],['DOB', patient.dob],['Blood Group', patient.bloodGroup],['Contact', patient.phone || '—']].map(([k,v]) => (
                 <div key={k} style={{ display:'flex', justifyContent:'space-between', padding:'5px 0', borderBottom:'0.5px solid #e0ecec' }}>
                   <span style={{ fontSize:'12px', color:'#8fa8a8' }}>{k}</span>
                   <span style={{ fontSize:'13px', fontWeight:'600', color:'#1a2b2b' }}>{v}</span>
@@ -48,7 +48,7 @@ export default function SuccessGeneration() {
           </button>
         </div>
       </div>
-      <Link to="/" className="back-to-index">← All screens</Link>
+      {/* <Link to="/" className="back-to-index">← All screens</Link> */}
     </div>
   )
 }

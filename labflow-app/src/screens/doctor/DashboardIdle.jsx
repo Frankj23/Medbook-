@@ -12,7 +12,7 @@ export default function DashboardIdle() {
   const [search, setSearch] = useState('')
   const [consultations, setConsultations] = useState([])
   const [pendingResults, setPendingResults] = useState([])
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const load = () => {
     const allCons = query('consultations', () => true).map(c => ({ ...c, patient: getById('patients', c.patientId) }))
@@ -45,8 +45,8 @@ export default function DashboardIdle() {
   const doctorLinks = [
     { label: 'Dashboard',                path: '/doctor/dashboard' },
     { label: 'Active Consultation',      path: '/doctor/consultation' },
-    { label: 'Review & Confirm',         path: '/doctor/consultation/notes' },
-    { label: 'Lab Request Sent',         path: '/doctor/consultation/confirmed' },
+    // { label: 'Review & Confirm',         path: '/doctor/consultation/notes' },
+    // { label: 'Lab Request Sent',         path: '/doctor/consultation/confirmed' },
     { label: 'Results Inbox',            path: '/doctor/results-inbox' },
     { label: 'Prescription Entry',       path: '/doctor/prescription/entry' },
     { label: 'Prescription Confirmed',   path: '/doctor/prescription/confirm' },

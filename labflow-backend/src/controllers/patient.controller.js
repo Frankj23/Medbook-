@@ -41,6 +41,7 @@ export async function createPatient(req, res) {
     address: payload.address || '',
     allergies: payload.allergies || 'None known',
     emergencyContact: payload.emergencyContact || '',
+    emergencyName: payload.emergencyName || '',
     nhis: payload.nhis || `NHIS-${Math.floor(Math.random() * 9000) + 1000}`,
   })
 

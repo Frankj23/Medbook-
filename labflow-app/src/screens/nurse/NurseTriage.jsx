@@ -83,7 +83,7 @@ export default function NurseTriage() {
           </button>
         </div>
       </div>
-      <Link to="/" className="back-to-index">← All screens</Link>
+      {/* <Link to="/" className="back-to-index">← All screens</Link> */}
     </div>
   )
 
@@ -138,13 +138,14 @@ export default function NurseTriage() {
               <p style={{ fontSize: '13px', color: '#5a7272', margin: '0 0 2px' }}>{patient.age} yrs • {patient.gender}</p>
               <p style={{ fontSize: '12px', color: '#8fa8a8', margin: '0 0 16px' }}>{patient.id}</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
-                {[['Blood Group', patient.bloodGroup], ['Allergies', patient.allergies], ['NHIS', patient.nhis]].map(([k,v]) => (
+                {[['Blood Group', patient.bloodGroup], ['Allergies', patient.allergies], ['emergency Name', patient.emergencyName], ['emergency Contact', patient.emergencyContact]].map(([k,v]) => (
                   <div key={k} style={{ background: '#f0f7f7', borderRadius: '8px', padding: '10px 12px' }}>
                     <p style={{ fontSize: '10px', color: '#8fa8a8', margin: '0 0 2px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.06em' }}>{k}</p>
                     <p style={{ fontSize: '13px', fontWeight: '600', color: '#1a2b2b', margin: 0 }}>{v}</p>
                   </div>
                 ))}
               </div>
+              
             </div>
 
             {/* Vitals form */}
@@ -191,7 +192,7 @@ export default function NurseTriage() {
           </div>
         )}
       </div>
-      <Link to="/" className="back-to-index">← All screens</Link>
+      {/* <Link to="/" className="back-to-index">← All screens</Link> */}
     </div>
   )
 }

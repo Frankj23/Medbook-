@@ -34,10 +34,10 @@ export default function PatientRegistration() {
       phone: form.phone,
       dob,
       bloodGroup: form.bloodGroup,
-      address: form.address,
       allergies: form.allergies || 'None known',
-      emergencyContact: form.emergencyContact,
       emergencyName: form.emergencyName,
+      emergencyContact: form.emergencyContact,
+      address: form.address,
     }
 
     const saved = insert('patients', payload)
@@ -81,7 +81,7 @@ export default function PatientRegistration() {
             </div>
             <div>
               <label style={{ fontSize: '13px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '7px' }}>Phone Number</label>
-              <input className="lf-input" type="tel" value={form.phone} onChange={set('phone')} placeholder="(555) 000-0000" />
+              <input className="lf-input" type="tel" value={form.phone} onChange={set('phone')} placeholder="+237 651 234 567" />
             </div>
             <div>
               <label style={{ fontSize: '13px', fontWeight: '600', color: '#5a7272', display: 'block', marginBottom: '7px' }}>Date of Birth *</label>

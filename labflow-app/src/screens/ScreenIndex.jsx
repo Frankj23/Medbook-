@@ -62,6 +62,14 @@ const GROUPS = [
       { label: 'Admin Dashboard',           path: '/admin', desc: 'Live stats, patients, pipeline' },
     ],
   },
+  {
+    role: 'Pharmacy',
+    emoji: '💊',
+    color: '#7c2d12',
+    screens: [
+      { label: 'Pharmacy Screen',           path: '/pharmacy', desc: 'Review and dispense prescriptions' },
+    ],
+  },
 ]
 
 export default function ScreenIndex() {
