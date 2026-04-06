@@ -21,24 +21,20 @@ export function AuthProvider({ children }) {
     }
   })
 
-  const login = async (roleKey, credentials = {}) => {
-    const role = ROLES[roleKey]
-    if (!role) {
-      throw new Error('Invalid role selected')
-    }
-
+  const login = async (id, password) => {
     try {
-      const response = await apiLoginUser(roleKey, credentials)
-      const payload = response.user || role
-      const u = { ...role, ...payload, roleKey }
+      const response = await apiLoginUser(id, password)
+      const userData = response.user
+      const roleData = ROLES[userData.role]
+      if (!roleData) {
+        throw new Error('Invalid user role')
+      }
+      const u = { ...roleData, ...userData, roleKey: userData.role }
       localStorage.setItem('labflow_user', JSON.stringify(u))
       setUser(u)
       return u
     } catch (error) {
-      const u = { ...role, roleKey }
-      localStorage.setItem('labflow_user', JSON.stringify(u))
-      setUser(u)
-      return u
+      throw error
     }
   }
 

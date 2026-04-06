@@ -27,10 +27,10 @@ async function request(path, options = {}) {
   return response.json()
 }
 
-export function loginUser(roleKey, credentials = {}) {
+export function loginUser(id, password) {
   return request('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ roleKey, ...credentials }),
+    body: JSON.stringify({ id, password }),
   })
 }
 

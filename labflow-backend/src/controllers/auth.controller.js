@@ -2,22 +2,19 @@ import { createDocument, getCollection, queryCollection } from '../services/fire
 import { generateRoleId } from '../utils/idGenerator.js'
 
 export async function login(req, res) {
-  const { roleKey, email } = req.body
-  if (!roleKey) {
-    return res.status(400).json({ error: 'roleKey is required' })
+  const { id, password } = req.body
+  if (!id || !password) {
+    return res.status(400).json({ error: 'ID and password are required' })
   }
 
-  let users = []
-  if (email) {
-    users = await queryCollection('users', 'email', '==', email)
-  } else {
-    const allUsers = await getCollection('users')
-    users = allUsers.filter(u => u.role === roleKey)
-  }
-
-  const user = users.find(u => u.role === roleKey) || users[0]
+  const users = await queryCollection('users', 'id', '==', id)
+  const user = users[0]
   if (!user) {
     return res.status(404).json({ error: 'User not found' })
+  }
+
+  if (user.password !== password) {
+    return res.status(401).json({ error: 'Invalid password' })
   }
 
   return res.json({ user, token: `${user.id}.token` })
