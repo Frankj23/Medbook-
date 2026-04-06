@@ -10,7 +10,7 @@ const CATEGORIES = [
 ]
 
 export default function NurseTriage() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [search, setSearch] = useState('')
@@ -106,6 +106,23 @@ export default function NurseTriage() {
           <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'linear-gradient(135deg,#0b6e6e,#005454)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '700', color: '#fff' }}>
             {user ? user.initials : 'NU'}
           </div>
+          <button
+            onClick={logout}
+            style={{
+              padding: '6px 12px',
+              background: '#dc2626',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '11px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              fontFamily: 'Inter, sans-serif'
+            }}
+            title="Logout"
+          >
+            Logout
+          </button>
         </div>
       </nav>
 
@@ -145,7 +162,24 @@ export default function NurseTriage() {
                   </div>
                 ))}
               </div>
-              
+              <button
+                onClick={() => navigate('/register/print')}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: '#005454',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  marginTop: '12px',
+                  fontFamily: 'Inter, sans-serif'
+                }}
+              >
+                🖨️ Print Patient ID
+              </button>
             </div>
 
             {/* Vitals form */}

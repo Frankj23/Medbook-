@@ -265,7 +265,7 @@ export default function DashboardIdle() {
           </div>
         </div>
       </div>
-      <Link to="/" className="back-to-index">← All screens</Link>
+      {/* <Link to="/" className="back-to-index">← All screens</Link> */}
     </div>
   )
 }
