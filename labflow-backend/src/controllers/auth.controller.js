@@ -4,7 +4,7 @@ import { generateRoleId } from '../utils/idGenerator.js'
 function getCollectionByPrefix(id) {
   if (id.startsWith('DR-')) return 'doctors'
   if (id.startsWith('AD-')) return 'admins'
-  if (id.startsWith('LB-')) return 'labtechs'
+  if (id.startsWith('LB-')) return 'lab_techs'
   if (id.startsWith('NS-')) return 'nurses'
   if (id.startsWith('PT-')) return 'patients'
   if (id.startsWith('RC-')) return 'receptionists'
