@@ -24,7 +24,9 @@ export default function DashboardIdle() {
   };
 
   const load = () => {
-    const patients = query("patients", (p) => isRecent(p.createdAt));
+    const patients = query("patients", (p) => isRecent(p.createdAt)).sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+    );
     setRecentPatients(patients);
 
     const recentPatientIds = new Set(patients.map((p) => p.id));
@@ -518,7 +520,14 @@ export default function DashboardIdle() {
             </div>
 
             {/* Status Filter */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                marginBottom: "16px",
+                flexWrap: "wrap",
+              }}
+            >
               {[
                 { label: "All", value: null },
                 { label: "New Patient", value: "new_patient" },
