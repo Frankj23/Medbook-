@@ -51,6 +51,14 @@ export const ROLES = {
     color: "#005454",
     home: "/",
   },
+  pharmacy: {
+    id: "PH-3001",
+    name: "Dr. Sarah Johnson",
+    title: "Pharmacist",
+    initials: "SJ",
+    color: "#005454",
+    home: "/pharmacy",
+  },
 };
 
 const AuthContext = createContext(null);
@@ -101,7 +109,7 @@ export function AuthProvider({ children }) {
         errorMessage.includes("400")
       ) {
         toast.error(
-          "Invalid ID format. Please use formats like DR-1024, AD-0001, etc.",
+          "Invalid ID format. Please use formats like DR-1024, PH-3001, AD-0001, etc.",
         );
       } else {
         toast.error("Login failed. Please try again.");

@@ -12,6 +12,7 @@ function getCollectionByPrefix(id) {
   if (id.startsWith("NS-")) return "nurses";
   if (id.startsWith("PT-")) return "patients";
   if (id.startsWith("RC-")) return "receptionists";
+  if (id.startsWith("PH-")) return "pharmacies";
   return null;
 }
 
@@ -22,6 +23,7 @@ function getRoleFromPrefix(id) {
   if (id.startsWith("NS-")) return "nurse";
   if (id.startsWith("PT-")) return "patient";
   if (id.startsWith("RC-")) return "receptionist";
+  if (id.startsWith("PH-")) return "pharmacy";
   return null;
 }
 
@@ -32,22 +34,37 @@ export async function login(req, res) {
   }
 
   const collectionName = getCollectionByPrefix(id);
-  if (!collectionName) {
-    return res.status(400).json({ error: "Invalid ID format" });
+  let users = [];
+
+  if (collectionName) {
+    users = await queryCollection(collectionName, "id", "==", id);
   }
 
-  const users = await queryCollection(collectionName, "id", "==", id);
+  if (users.length === 0) {
+    users = await queryCollection("users", "id", "==", id);
+  }
+
+  if (users.length === 0) {
+    return res.status(404).json({ error: "User ID not found" });
+  }
+
   const user = users[0];
 
-  if (!user) {
-    return res.status(404).json({ error: "User ID not found" });
+  if (!user.password) {
+    return res
+      .status(400)
+      .json({ error: "User does not have a password configured" });
   }
 
   if (user.password !== password) {
     return res.status(401).json({ error: "Incorrect password" });
   }
 
-  const role = getRoleFromPrefix(id);
+  const role = user.role || getRoleFromPrefix(id);
+  if (!role) {
+    return res.status(400).json({ error: "Invalid ID format" });
+  }
+
   return res.json({
     user: {
       ...user,
