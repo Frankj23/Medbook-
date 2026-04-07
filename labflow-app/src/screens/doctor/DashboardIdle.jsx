@@ -14,6 +14,7 @@ export default function DashboardIdle() {
   const [consultations, setConsultations] = useState([]);
   const [pendingResults, setPendingResults] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState(null);
 
   const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const isRecent = (iso) => {
@@ -141,6 +142,13 @@ export default function DashboardIdle() {
       entry.patient?.name.toLowerCase().includes(search.toLowerCase()) ||
       entry.patient?.id?.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const statusFiltered = statusFilter
+    ? filtered.filter(({ consultation }) => {
+        if (statusFilter === "new_patient") return !consultation;
+        return consultation?.status === statusFilter;
+      })
+    : filtered;
 
   return (
     <div
@@ -509,10 +517,38 @@ export default function DashboardIdle() {
               />
             </div>
 
+            {/* Status Filter */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+              {[
+                { label: "All", value: null },
+                { label: "New Patient", value: "new_patient" },
+                { label: "Lab Requested", value: "lab_requested" },
+                { label: "Results Ready", value: "results_ready" },
+              ].map(({ label, value }) => (
+                <button
+                  key={label}
+                  onClick={() => setStatusFilter(value)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    border: "1px solid #e8f2f2",
+                    background: statusFilter === value ? "#e6f4f4" : "#fff",
+                    color: "#1a2b2b",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: statusFilter === value ? 700 : 600,
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
             <div
               style={{ display: "flex", flexDirection: "column", gap: "10px" }}
             >
-              {filtered.length === 0 ? (
+              {statusFiltered.length === 0 ? (
                 <div
                   className="lf-card"
                   style={{ padding: "32px", textAlign: "center" }}
@@ -522,7 +558,7 @@ export default function DashboardIdle() {
                   </p>
                 </div>
               ) : (
-                filtered.map(({ patient, consultation }) => {
+                statusFiltered.map(({ patient, consultation }) => {
                   const ss = consultation
                     ? statusStyle[consultation.status] || statusStyle.completed
                     : statusStyle.new_patient;
@@ -533,7 +569,11 @@ export default function DashboardIdle() {
                       style={{ padding: "16px", cursor: "pointer" }}
                       onClick={() => {
                         setPatientFromId(patient.id);
-                        navigate("/doctor/consultation");
+                        if (consultation?.status === "results_ready") {
+                          navigate("/doctor/prescription/confirm");
+                        } else {
+                          navigate("/doctor/consultation");
+                        }
                       }}
                     >
                       <div

@@ -181,7 +181,7 @@ export default function AdminDashboard() {
           ))}
         </div>
       </div>
-      <Link to="/" className="back-to-index">← All screens</Link>
+      // <Link to="/" className="back-to-index">← All screens</Link>
     </div>
   )
 }
