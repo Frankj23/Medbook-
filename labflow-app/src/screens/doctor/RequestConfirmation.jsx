@@ -30,7 +30,7 @@ export default function RequestConfirmation() {
           <span style={{ fontSize: '17px', fontWeight: '700', color: '#1a2b2b' }}>Doctor Portal</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '14px', fontWeight: '500', color: '#5a7272' }}>Dr. Sarah Jenkins</span>
+          <span style={{ fontSize: '14px', fontWeight: '500', color: '#5a7272' }}>Dr. Sarah Mbi</span>
           <div style={{
             width: '38px', height: '38px', borderRadius: '50%',
             background: '#e0f2f2', border: '2px solid #b0d8d8',
@@ -150,7 +150,7 @@ export default function RequestConfirmation() {
         </div>
       </div>
 
-      <Link to="/" className="back-to-index">← All screens</Link>
+      {/* <Link to="/" className="back-to-index">← All screens</Link> */}
     </div>
   )
 }

@@ -599,7 +599,7 @@ export default function NurseTriage() {
                 {[
                   ["Blood Group", patient.bloodGroup],
                   ["Allergies", patient.allergies],
-                  ["Emergency Name", patient.emergencyName],
+                  // ["Emergency Name", patient.emergencyName],
                   ["Emergency Contact", patient.emergencyContact],
                 ].map(([k, v]) => (
                   <div

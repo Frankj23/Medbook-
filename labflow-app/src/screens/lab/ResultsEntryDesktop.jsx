@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { query, update, insert, getPatients } from '../../services/db'
+import { query, update, insert, generateId, getPatients } from '../../services/db'
 import { usePatient } from '../../context/PatientContext'
 
 export default function ResultsEntryDesktop() {
@@ -27,9 +27,27 @@ export default function ResultsEntryDesktop() {
 
   const handleSubmit = () => {
     if (!reviewed || !labRequest) return
-    const results = { malariaTest: findings || 'Negative', hemoglobin: hb, wbc, platelets: plt, techNotes }
-    db.updateLabRequest(labRequest.id, { status:'resulted', results, submittedAt: new Date().toISOString() })
-    db.updatePatient(labRequest.patientId, { status:'lab_resulted' })
+
+    const resultPayload = [
+      { test: 'Malaria Test', value: findings || 'Negative', unit: '', ref: 'Negative', flag: findings === 'Positive' ? 'HIGH' : 'NORMAL' },
+      ...(hb ? [{ test: 'Hemoglobin', value: hb, unit: 'g/dL', ref: '13.5–17.5', flag: parseFloat(hb) < 13.5 ? 'LOW' : 'NORMAL' }] : []),
+      ...(wbc ? [{ test: 'White Blood Cells', value: wbc, unit: '10⁹/L', ref: '4.0–11.0', flag: parseFloat(wbc) < 4 ? 'LOW' : parseFloat(wbc) > 11 ? 'HIGH' : 'NORMAL' }] : []),
+      ...(plt ? [{ test: 'Platelet Count', value: plt, unit: '10⁹/L', ref: '150–450', flag: parseFloat(plt) < 150 ? 'LOW' : parseFloat(plt) > 450 ? 'HIGH' : 'NORMAL' }] : []),
+    ]
+
+    update('lab_orders', labRequest.id, { status: 'resulted', results: resultPayload, submittedAt: new Date().toISOString() })
+    update('consultations', labRequest.consultationId, { status: 'results_ready' })
+    insert('lab_results', {
+      id: generateId('RES'),
+      labOrderId: labRequest.id,
+      patientId: labRequest.patientId,
+      results: resultPayload,
+      techNotes,
+      submittedBy: 'Alex Rivera',
+      submittedAt: new Date().toISOString(),
+      reviewedByDoctor: false,
+    })
+    update('patients', labRequest.patientId, { status: 'lab_resulted' })
     navigate('/lab/desktop/queue')
   }
 

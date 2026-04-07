@@ -64,7 +64,7 @@ export default function ActiveConsultation() {
       collectedAt: null,
     });
 
-    navigate("/doctor/consultation/notes");
+    navigate("/doctor/dashboard");
   };
 
   return (

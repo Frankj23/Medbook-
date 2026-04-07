@@ -17,9 +17,30 @@ export default function LabQueueDesktop() {
   const [stats, setStats] = useState({})
 
   useEffect(() => {
-    const reqs = query('lab_orders', r => r.status === 'sample_collected')
-    const enriched = reqs.map(r => ({ ...r, patient: getById('patients', r.patientId) }))
-    setQueue(enriched)
+    const labOrders = query('lab_orders', r => ['pending_collection', 'sample_collected', 'processing'].includes(r.status))
+    const consultationRequests = query('consultations', c => c.status === 'lab_requested' && Array.isArray(c.selectedTests) && c.selectedTests.length > 0)
+
+    const enrichedOrders = labOrders.map(r => ({
+      ...r,
+      patient: getById('patients', r.patientId),
+      tests: r.tests || [],
+    }))
+
+    const ordersByConsultation = new Set(labOrders.map(r => r.consultationId))
+    const enrichedConsultations = consultationRequests
+      .filter(c => !ordersByConsultation.has(c.id))
+      .map(c => ({
+        ...c,
+        patient: getById('patients', c.patientId),
+        tests: c.selectedTests || [],
+        requestedBy: c.doctorName || 'Doctor',
+        requestedAt: c.createdAt,
+        status: 'pending_collection',
+        priority: false,
+        accessionNumber: null,
+      }))
+
+    setQueue([...enrichedOrders, ...enrichedConsultations])
     setStats(getStats())
   }, [])
 
@@ -140,7 +161,7 @@ export default function LabQueueDesktop() {
           </div>
         )}
       </main>
-      <Link to="/" className="back-to-index">← All screens</Link>
+      {/* <Link to="/" className="back-to-index">← All screens</Link> */}
     </div>
   )
 }

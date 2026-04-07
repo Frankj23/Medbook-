@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getPrescriptions, getById } from '../../services/db'
 
 const mockPrescriptions = [
   {
@@ -65,9 +66,26 @@ const mockPrescriptions = [
 export default function PharmacyScreen() {
   const navigate = useNavigate()
   const [selectedPrescription, setSelectedPrescription] = useState(null)
-  const [prescriptions, setPrescriptions] = useState(mockPrescriptions)
+  const [prescriptions, setPrescriptions] = useState([])
   const [updatedMedications, setUpdatedMedications] = useState({})
   const [generalNote, setGeneralNote] = useState('')
+
+  useEffect(() => {
+    const loaded = (getPrescriptions() || []).map(item => ({
+      ...item,
+      patient: item.patient || getById('patients', item.patientId),
+      medications: item.medications || [],
+    }))
+    const items = loaded.length > 0 ? loaded : mockPrescriptions
+    setPrescriptions(items)
+    if (!selectedPrescription && items.length > 0) {
+      setSelectedPrescription(items[0])
+      setUpdatedMedications(items[0].medications.reduce((acc, med, i) => {
+        acc[i] = { ...med }
+        return acc
+      }, {}))
+    }
+  }, [])
 
   const handleSelectPrescription = (prescription) => {
     setSelectedPrescription(prescription)

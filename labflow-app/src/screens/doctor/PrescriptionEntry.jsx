@@ -11,6 +11,8 @@ export default function PrescriptionEntry() {
   const [consultation, setConsultationState] = useState(null)
   const [diagnosis, setDiagnosis] = useState('')
   const [drugs, setDrugs] = useState([{ name:'', dosage:'', frequency:'', duration:'' }])
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [confirmationText, setConfirmationText] = useState('')
 
   useEffect(() => {
     const p = ctxPatient || getPatients().find(pt => pt.status === 'lab_resulted')
@@ -34,15 +36,33 @@ export default function PrescriptionEntry() {
 
   const handleSend = () => {
     if (!patient) return
-    const rx = db.savePrescription({
+    const prescription = insert('prescriptions', {
       patientId: patient.id,
       consultationId: consultation?.id,
       labRequestId: labRequest?.id,
       diagnosis,
-      medications: drugs.map((d, i) => ({ name: d.name, detail:`${d.dosage} · ${d.frequency}`, qty: parseInt(d.duration) || 7, ...d })),
+      medications: drugs.map((d, i) => ({
+        name: d.name,
+        dosage: d.dosage,
+        frequency: d.frequency,
+        duration: d.duration,
+        dispensedQuantity: '',
+        status: 'Pending',
+        substitute: '',
+        note: '',
+      })),
+      status: 'Pending',
+      createdAt: new Date().toISOString(),
     })
-    db.updatePatient(patient.id, { status:'prescribed' })
-    navigate('/doctor/prescription/confirm')
+
+    updatePatient(patient.id, { status:'prescribed' })
+    setConfirmationText(`Prescription ${prescription.id} sent to pharmacy successfully.`)
+    setShowConfirm(true)
+
+    setTimeout(() => {
+      setShowConfirm(false)
+      navigate('/doctor/dashboard')
+    }, 1800)
   }
 
   const labResults = labRequest?.results
@@ -190,6 +210,18 @@ export default function PrescriptionEntry() {
             Send Prescription to Pharmacy
           </button>
         </div>
+        {showConfirm && (
+          <div style={{ position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(15,23,42,0.35)', zIndex:50 }}>
+            <div style={{ width:'92%', maxWidth:'420px', background:'#fff', borderRadius:'22px', padding:'28px', boxShadow:'0 24px 70px rgba(0,0,0,0.18)', textAlign:'center' }}>
+              <div style={{ width:'56px', height:'56px', margin:'0 auto 18px', borderRadius:'50%', background:'#1a7a4a', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <svg width='26' height='26' viewBox='0 0 24 24' fill='none' stroke='#fff' strokeWidth='2.5'><path d='M5 13l4 4L19 7'/></svg>
+              </div>
+              <h2 style={{ fontSize:'20px', fontWeight:'800', color:'#1a2b2b', margin:'0 0 10px' }}>Prescription Sent</h2>
+              <p style={{ color:'#5a7272', fontSize:'14px', margin:'0 0 20px' }}>{confirmationText}</p>
+              <div style={{ display:'inline-flex', padding:'10px 18px', borderRadius:'999px', background:'#e6f4f4', color:'#1a2b2b', fontWeight:'700', fontSize:'13px' }}>Returning to dashboard…</div>
+            </div>
+          </div>
+        )}
       </div>
       {/* <Link to="/" className="back-to-index">← All screens</Link> */}
     </div>
