@@ -25,6 +25,7 @@ export default function ActiveConsultation() {
   const [symptoms, setSymptoms] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
   const [selected, setSelected] = useState([]);
+  const [customTests, setCustomTests] = useState("");
   const [stat, setStat] = useState(false);
   const navigate = useNavigate();
 
@@ -32,7 +33,11 @@ export default function ActiveConsultation() {
     setSelected((p) => (p.includes(t) ? p.filter((x) => x !== t) : [...p, t]));
 
   const handleReviewAndConfirm = () => {
-    setConsultation({ symptoms, diagnosis, selectedTests: selected });
+    const allTests = [
+      ...selected,
+      ...(customTests.trim() ? customTests.split(',').map(t => t.trim()).filter(Boolean) : [])
+    ];
+    setConsultation({ symptoms, diagnosis, selectedTests: allTests });
     const consultId = generateId("CONS");
     const orderId = generateId("ORD");
     const doctorId = user?.id || "DR-1024";
@@ -45,7 +50,7 @@ export default function ActiveConsultation() {
       doctorName,
       symptoms,
       diagnosis,
-      selectedTests: selected,
+      selectedTests: allTests,
       createdAt: new Date().toISOString(),
       status: "lab_requested",
     });
@@ -54,7 +59,7 @@ export default function ActiveConsultation() {
       id: orderId,
       patientId: patient.id,
       consultationId: consultId,
-      tests: selected,
+      tests: allTests,
       requestedBy: doctorName,
       requestedAt: new Date().toISOString(),
       status: "pending_collection",
@@ -359,6 +364,7 @@ export default function ActiveConsultation() {
                   display: "grid",
                   gridTemplateColumns: "repeat(3,1fr)",
                   gap: "10px",
+                  marginBottom: "14px",
                 }}
               >
                 {ALL_TESTS.map((t) => (
@@ -387,6 +393,27 @@ export default function ActiveConsultation() {
                     {t}
                   </label>
                 ))}
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    color: "#5a7272",
+                    display: "block",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Other Tests (if not listed above)
+                </label>
+                <textarea
+                  className="lf-textarea"
+                  placeholder="Enter custom test names, separated by commas (e.g. COVID-19 PCR, D-Dimer)"
+                  rows={2}
+                  value={customTests}
+                  onChange={(e) => setCustomTests(e.target.value)}
+                  style={{ fontSize: "14px" }}
+                />
               </div>
             </div>
             {/* STAT toggle */}
@@ -455,8 +482,8 @@ export default function ActiveConsultation() {
               <button
                 className="btn-amber"
                 onClick={handleReviewAndConfirm}
-                disabled={selected.length === 0}
-                style={{ opacity: selected.length === 0 ? 0.5 : 1 }}
+                disabled={selected.length === 0 && !customTests.trim()}
+                style={{ opacity: selected.length === 0 && !customTests.trim() ? 0.5 : 1 }}
               >
                 <svg
                   width="14"

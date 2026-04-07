@@ -566,9 +566,28 @@ export default function NurseTriage() {
                   fontWeight: "700",
                   color: "#1a2b2b",
                   margin: "0 0 4px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
                 {patient.name}
+                {patient.isEmergency && (
+                  <span
+                    style={{
+                      background: "#c62828",
+                      color: "#fff",
+                      fontSize: "10px",
+                      fontWeight: "800",
+                      padding: "2px 8px",
+                      borderRadius: "12px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    Emergency
+                  </span>
+                )}
               </h3>
               <p
                 style={{
@@ -599,7 +618,7 @@ export default function NurseTriage() {
                 {[
                   ["Blood Group", patient.bloodGroup],
                   ["Allergies", patient.allergies],
-                  // ["Emergency Name", patient.emergencyName],
+                  ["Emergency Name", patient.emergencyName],
                   ["Emergency Contact", patient.emergencyContact],
                 ].map(([k, v]) => (
                   <div
@@ -615,8 +634,7 @@ export default function NurseTriage() {
                         fontSize: "10px",
                         color: "#8fa8a8",
                         margin: "0 0 2px",
-                        textTransform: "uppercase",
-                        fontWeight: "700",
+                   //      textTransform: "uppercemergencyName                 fontWeight: "700",
                         letterSpacing: "0.06em",
                       }}
                     >
@@ -669,6 +687,40 @@ export default function NurseTriage() {
                 </svg>
                 Print Patient ID
               </button>
+              {patient.isEmergency && (
+                <button
+                  onClick={() => navigate('/register', { state: { emergencyPatient: patient } })}
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    background: "#c62828",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "10px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    fontFamily: "Inter, sans-serif",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    marginTop: "8px",
+                  }}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Complete Patient Details
+                </button>
+              )}
             </div>
 
             {/* Vitals form */}

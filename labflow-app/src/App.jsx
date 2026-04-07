@@ -9,6 +9,7 @@ import ActiveConsultation from './screens/doctor/ActiveConsultation'
 import FormCompletion from './screens/doctor/FormCompletion'
 import RequestConfirmation from './screens/doctor/RequestConfirmation'
 import PatientRegistration from './screens/patient/PatientRegistration'
+import EmergencyRegistration from './screens/patient/EmergencyRegistration'
 import SuccessGeneration from './screens/patient/SuccessGeneration'
 import PrintIdPreview from './screens/patient/PrintIdPreview'
 import NurseTriage from './screens/nurse/NurseTriage'
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/*" element={<ProtectedRoute><ScreenIndex /></ProtectedRoute>} />
             <Route path="/register" element={<ProtectedRoute><PatientRegistration /></ProtectedRoute>} />
+            <Route path="/register/emergency" element={<ProtectedRoute><EmergencyRegistration /></ProtectedRoute>} />
             <Route path="/register/success" element={<ProtectedRoute><SuccessGeneration /></ProtectedRoute>} />
             <Route path="/register/print" element={<ProtectedRoute><PrintIdPreview /></ProtectedRoute>} />
             <Route path="/nurse/triage" element={<ProtectedRoute><NurseTriage /></ProtectedRoute>} />

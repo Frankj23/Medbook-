@@ -1,14 +1,36 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { insert, generateId } from '../../services/db'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { insert, update, generateId } from '../../services/db'
 import { usePatient } from '../../context/PatientContext'
 
 export default function PatientRegistration() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { setPatient } = usePatient()
+  const [isCompletingEmergency, setIsCompletingEmergency] = useState(false)
+  const [emergencyPatient, setEmergencyPatient] = useState(null)
   const [form, setForm] = useState({ fullName: '', phone: '', dob: '', gender: 'Female', address: '', bloodGroup: 'O+', allergies: '', emergencyName: '', emergencyContact: '' })
   const [submitted, setSubmitted] = useState(false)
   const [savedId, setSavedId] = useState(null)
+
+  useEffect(() => {
+    if (location.state?.emergencyPatient) {
+      const patient = location.state.emergencyPatient
+      setIsCompletingEmergency(true)
+      setEmergencyPatient(patient)
+      setForm({
+        fullName: patient.name || '',
+        phone: '',
+        dob: '',
+        gender: patient.gender || 'Female',
+        address: '',
+        bloodGroup: 'O+',
+        allergies: '',
+        emergencyName: '',
+        emergencyContact: ''
+      })
+    }
+  }, [location.state])
 
   const errors = submitted ? {
     fullName: !form.fullName.trim() ? 'Full name is required' : '',
@@ -21,29 +43,58 @@ export default function PatientRegistration() {
   const handleSubmit = async () => {
     setSubmitted(true)
     if (hasErrors) return
-    const id = generateId('PT')
-    const dob = form.dob
-    const born = new Date(dob)
-    const age = new Date().getFullYear() - born.getFullYear()
-    const payload = {
-      id,
-      name: form.fullName,
-      initials: form.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
-      age,
-      gender: form.gender,
-      phone: form.phone,
-      dob,
-      bloodGroup: form.bloodGroup,
-      allergies: form.allergies || 'None known',
-      emergencyName: form.emergencyName,
-      emergencyContact: form.emergencyContact,
-      address: form.address,
-    }
 
-    const saved = insert('patients', payload)
-    setPatient(saved)
-    setSavedId(saved.id)
-    navigate('/nurse/triage', { state: { patientId: saved.id } })
+    if (isCompletingEmergency && emergencyPatient) {
+      // Update existing emergency patient
+      const dob = form.dob
+      const born = new Date(dob)
+      const age = new Date().getFullYear() - born.getFullYear()
+      const updatedPatient = {
+        ...emergencyPatient,
+        name: form.fullName,
+        initials: form.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+        age,
+        gender: form.gender,
+        phone: form.phone,
+        dob,
+        bloodGroup: form.bloodGroup,
+        allergies: form.allergies || 'None known',
+        emergencyName: form.emergencyName,
+        emergencyContact: form.emergencyContact,
+        address: form.address,
+        isEmergency: false, // Mark as no longer emergency
+        status: 'registered'
+      }
+
+      const saved = update('patients', emergencyPatient.id, updatedPatient)
+      setPatient(saved)
+      navigate('/nurse/triage', { state: { patientId: saved.id } })
+    } else {
+      // Create new patient
+      const id = generateId('PT')
+      const dob = form.dob
+      const born = new Date(dob)
+      const age = new Date().getFullYear() - born.getFullYear()
+      const payload = {
+        id,
+        name: form.fullName,
+        initials: form.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase(),
+        age,
+        gender: form.gender,
+        phone: form.phone,
+        dob,
+        bloodGroup: form.bloodGroup,
+        allergies: form.allergies || 'None known',
+        emergencyName: form.emergencyName,
+        emergencyContact: form.emergencyContact,
+        address: form.address,
+      }
+
+      const saved = insert('patients', payload)
+      setPatient(saved)
+      setSavedId(saved.id)
+      navigate('/nurse/triage', { state: { patientId: saved.id } })
+    }
   }
 
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }))
@@ -63,7 +114,9 @@ export default function PatientRegistration() {
 
       <div style={{ padding: '32px 24px', display: 'flex', justifyContent: 'center' }}>
         <div className="lf-card" style={{ width: '100%', maxWidth: '620px', padding: '32px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1a2b2b', margin: '0 0 24px' }}>New Patient Registration</h2>
+          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1a2b2b', margin: '0 0 24px' }}>
+            {isCompletingEmergency ? 'Complete Emergency Patient Details' : 'New Patient Registration'}
+          </h2>
 
           {submitted && hasErrors && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#fff0f0', borderLeft: '4px solid #c62828', borderRadius: '10px', padding: '14px 16px', marginBottom: '24px' }}>
@@ -131,9 +184,26 @@ export default function PatientRegistration() {
 
           <div style={{ height: '1px', background: '#e8f2f2', marginBottom: '20px' }} />
           <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '15px' }} onClick={handleSubmit}>
-            Register Patient
+            {isCompletingEmergency ? 'Complete Patient Details' : 'Register Patient'}
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
+
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <button
+              onClick={() => navigate('/register/emergency')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#c62828',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              🚑 Register Emergency Patient
+            </button>
+          </div>
         </div>
       </div>
       {/* <Link to="/" className="back-to-index">← All screens</Link> */}
