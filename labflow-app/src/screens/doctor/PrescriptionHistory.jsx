@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { getPrescriptions, getById } from "../../services/db";
+import {
+  getPrescriptions,
+  getById,
+  fetchPrescriptions,
+  fetchPatients,
+} from "../../services/db";
 import { usePatient } from "../../context/PatientContext";
 
 const INITIALS_BG = ["#005454", "#0b6e6e", "#1a5c5c", "#004545"];
@@ -17,7 +22,17 @@ export default function PrescriptionHistory() {
   const TOTAL_PAGES = 32;
 
   useEffect(() => {
-    setPrescriptions(getPrescriptions());
+    const load = async () => {
+      try {
+        await fetchPatients();
+        const prescriptionsData = await fetchPrescriptions();
+        setPrescriptions(prescriptionsData);
+      } catch (error) {
+        setPrescriptions(getPrescriptions());
+      }
+    };
+
+    load();
   }, []);
 
   const rows = prescriptions.map((rx) => {

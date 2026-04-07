@@ -114,7 +114,7 @@ export default function Login() {
                 type="text"
                 value={form.id}
                 onChange={setField("id")}
-                placeholder="Enter your ID (e.g. DR-1024)"
+                placeholder="Enter your ID (e.g. DR-1024, PH-3001)"
                 required
                 disabled={loading}
               />
